@@ -27,6 +27,7 @@ void FdbOrch::update(sai_fdb_event_t type, const sai_fdb_entry_t* entry, sai_obj
         break;
     case SAI_FDB_EVENT_AGED:
     case SAI_FDB_EVENT_FLUSHED:
+    case SAI_FDB_EVENT_MOVE:
         update.add = false;
         break;
     }
@@ -46,7 +47,7 @@ bool FdbOrch::getPort(const MacAddress& mac, uint16_t vlan, Port& port)
     entry.vlan_id = vlan;
 
     sai_attribute_t attr;
-    attr.id = SAI_FDB_ENTRY_ATTR_PORT_ID;
+    attr.id = SAI_FDB_ENTRY_ATTR_BRIDGE_PORT_ID;
 
     sai_status_t status = sai_fdb_api->get_fdb_entry_attribute(&entry, 1, &attr);
     if (status != SAI_STATUS_SUCCESS)

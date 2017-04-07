@@ -4,6 +4,7 @@
 #include "swssnet.h"
 
 extern sai_object_id_t gVirtualRouterId;
+extern sai_object_id_t gSwitchId;
 
 extern sai_next_hop_group_api_t*    sai_next_hop_group_api;
 extern sai_route_api_t*             sai_route_api;
@@ -20,16 +21,16 @@ RouteOrch::RouteOrch(DBConnector *db, string tableName, NeighOrch *neighOrch) :
 
     IpPrefix default_ip_prefix("0.0.0.0/0");
 
-    sai_unicast_route_entry_t unicast_route_entry;
+    sai_route_entry_t unicast_route_entry;
     unicast_route_entry.vr_id = gVirtualRouterId;
     copy(unicast_route_entry.destination, default_ip_prefix);
     subnet(unicast_route_entry.destination, unicast_route_entry.destination);
 
     sai_attribute_t attr;
-    attr.id = SAI_ROUTE_ATTR_PACKET_ACTION;
+    attr.id = SAI_ROUTE_ENTRY_ATTR_PACKET_ACTION;
     attr.value.s32 = SAI_PACKET_ACTION_DROP;
 
-    sai_status_t status = sai_route_api->create_route(&unicast_route_entry, 1, &attr);
+    sai_status_t status = sai_route_api->create_route_entry(&unicast_route_entry, 1, &attr);
     if (status != SAI_STATUS_SUCCESS)
     {
         SWSS_LOG_ERROR("Failed to create v4 default route with packet action drop");
@@ -46,7 +47,7 @@ RouteOrch::RouteOrch(DBConnector *db, string tableName, NeighOrch *neighOrch) :
     copy(unicast_route_entry.destination, v6_default_ip_prefix);
     subnet(unicast_route_entry.destination, unicast_route_entry.destination);
 
-    status = sai_route_api->create_route(&unicast_route_entry, 1, &attr);
+    status = sai_route_api->create_route_entry(&unicast_route_entry, 1, &attr);
     if (status != SAI_STATUS_SUCCESS)
     {
         SWSS_LOG_ERROR("Failed to create v6 default route with packet action drop");
@@ -387,17 +388,17 @@ bool RouteOrch::addNextHopGroup(IpAddresses ipAddresses)
     vector<sai_attribute_t> nhg_attrs;
 
     nhg_attr.id = SAI_NEXT_HOP_GROUP_ATTR_TYPE;
-    nhg_attr.value.s32 = SAI_NEXT_HOP_GROUP_ECMP;
+    nhg_attr.value.s32 = SAI_NEXT_HOP_GROUP_TYPE_ECMP;
     nhg_attrs.push_back(nhg_attr);
 
-    nhg_attr.id = SAI_NEXT_HOP_GROUP_ATTR_NEXT_HOP_LIST;
+    nhg_attr.id = SAI_NEXT_HOP_GROUP_ATTR_NEXT_HOP_MEMBER_LIST;
     nhg_attr.value.objlist.count = next_hop_ids.size();
     nhg_attr.value.objlist.list = next_hop_ids.data();
     nhg_attrs.push_back(nhg_attr);
 
     sai_object_id_t next_hop_group_id;
     sai_status_t status = sai_next_hop_group_api->
-            create_next_hop_group(&next_hop_group_id, nhg_attrs.size(), nhg_attrs.data());
+            create_next_hop_group(&next_hop_group_id, gSwitchId, nhg_attrs.size(), nhg_attrs.data());
     if (status != SAI_STATUS_SUCCESS)
     {
         SWSS_LOG_ERROR("Failed to create next hop group nh:%s\n",
@@ -548,7 +549,7 @@ bool RouteOrch::addRoute(IpPrefix ipPrefix, IpAddresses nextHops)
     }
 
     /* Sync the route entry */
-    sai_unicast_route_entry_t route_entry;
+    sai_route_entry_t route_entry;
     route_entry.vr_id = gVirtualRouterId;
     copy(route_entry.destination, ipPrefix);
 
@@ -562,10 +563,10 @@ bool RouteOrch::addRoute(IpPrefix ipPrefix, IpAddresses nextHops)
      */
     if (it_route == m_syncdRoutes.end())
     {
-        route_attr.id = SAI_ROUTE_ATTR_NEXT_HOP_ID;
+        route_attr.id = SAI_ROUTE_ENTRY_ATTR_NEXT_HOP_ID;
         route_attr.value.oid = next_hop_id;
 
-        sai_status_t status = sai_route_api->create_route(&route_entry, 1, &route_attr);
+        sai_status_t status = sai_route_api->create_route_entry(&route_entry, 1, &route_attr);
         if (status != SAI_STATUS_SUCCESS)
         {
             SWSS_LOG_ERROR("Failed to create route %s with next hop(s) %s",
@@ -586,10 +587,10 @@ bool RouteOrch::addRoute(IpPrefix ipPrefix, IpAddresses nextHops)
     else
     {
         /* Set the packet action to forward */
-        route_attr.id = SAI_ROUTE_ATTR_PACKET_ACTION;
+        route_attr.id = SAI_ROUTE_ENTRY_ATTR_PACKET_ACTION;
         route_attr.value.s32 = SAI_PACKET_ACTION_FORWARD;
 
-        sai_status_t status = sai_route_api->set_route_attribute(&route_entry, &route_attr);
+        sai_status_t status = sai_route_api->set_route_entry_attribute(&route_entry, &route_attr);
         if (status != SAI_STATUS_SUCCESS)
         {
             SWSS_LOG_ERROR("Failed to set route %s with packet action forward, %d",
@@ -597,11 +598,11 @@ bool RouteOrch::addRoute(IpPrefix ipPrefix, IpAddresses nextHops)
             return false;
         }
 
-        route_attr.id = SAI_ROUTE_ATTR_NEXT_HOP_ID;
+        route_attr.id = SAI_ROUTE_ENTRY_ATTR_NEXT_HOP_ID;
         route_attr.value.oid = next_hop_id;
 
         /* Set the next hop ID to a new value */
-        status = sai_route_api->set_route_attribute(&route_entry, &route_attr);
+        status = sai_route_api->set_route_entry_attribute(&route_entry, &route_attr);
         if (status != SAI_STATUS_SUCCESS)
         {
             SWSS_LOG_ERROR("Failed to set route %s with next hop(s) %s",
@@ -632,7 +633,7 @@ bool RouteOrch::removeRoute(IpPrefix ipPrefix)
 {
     SWSS_LOG_ENTER();
 
-    sai_unicast_route_entry_t route_entry;
+    sai_route_entry_t route_entry;
     route_entry.vr_id = gVirtualRouterId;
     copy(route_entry.destination, ipPrefix);
 
@@ -640,10 +641,10 @@ bool RouteOrch::removeRoute(IpPrefix ipPrefix)
     if (ipPrefix.isDefaultRoute())
     {
         sai_attribute_t attr;
-        attr.id = SAI_ROUTE_ATTR_PACKET_ACTION;
+        attr.id = SAI_ROUTE_ENTRY_ATTR_PACKET_ACTION;
         attr.value.s32 = SAI_PACKET_ACTION_DROP;
 
-        sai_status_t status = sai_route_api->set_route_attribute(&route_entry, &attr);
+        sai_status_t status = sai_route_api->set_route_entry_attribute(&route_entry, &attr);
         if (status != SAI_STATUS_SUCCESS)
         {
             SWSS_LOG_ERROR("Failed to set route %s to drop", ipPrefix.to_string().c_str());
@@ -652,7 +653,7 @@ bool RouteOrch::removeRoute(IpPrefix ipPrefix)
     }
     else
     {
-        sai_status_t status = sai_route_api->remove_route(&route_entry);
+        sai_status_t status = sai_route_api->remove_route_entry(&route_entry);
         if (status != SAI_STATUS_SUCCESS)
         {
             SWSS_LOG_ERROR("Failed to remove route prefix:%s\n", ipPrefix.to_string().c_str());
