@@ -11,7 +11,6 @@ extern "C" {
 #include <getopt.h>
 
 #define SAI_SWITCH_ATTR_CUSTOM_RANGE_BASE SAI_SWITCH_ATTR_CUSTOM_RANGE_START
-#include <sairedis.h>
 #include "orchdaemon.h"
 #include "logger.h"
 #include "notifications.h"
@@ -148,14 +147,14 @@ int main(int argc, char **argv)
     int opt;
     sai_status_t status;
 
-    bool disableRecord = false;
+    // bool disableRecord = false;
 
     while ((opt = getopt(argc, argv, "m:hR")) != -1)
     {
         switch (opt)
         {
         case 'R':
-            disableRecord = true;
+            // disableRecord = true;
             break;
         case 'm':
             gMacAddress = MacAddress(optarg);
@@ -193,40 +192,40 @@ int main(int argc, char **argv)
     SWSS_LOG_NOTICE("Enabling sairedis recording");
 
     sai_attribute_t attr;
-    attr.id = SAI_REDIS_SWITCH_ATTR_RECORD;
-    attr.value.booldata = !disableRecord;
+    // attr.id = SAI_REDIS_SWITCH_ATTR_RECORD;
+    // attr.value.booldata = !disableRecord;
 
-    status = sai_switch_api->set_switch_attribute(gSwitchId, &attr);
+    // status = sai_switch_api->set_switch_attribute(gSwitchId, &attr);
 
-    if (status != SAI_STATUS_SUCCESS)
-    {
-        SWSS_LOG_ERROR("Failed to enable recording %d", status);
-        exit(EXIT_FAILURE);
-    }
+    // if (status != SAI_STATUS_SUCCESS)
+    // {
+        // SWSS_LOG_ERROR("Failed to enable recording %d", status);
+        // exit(EXIT_FAILURE);
+    // }
 
-    SWSS_LOG_NOTICE("Notify syncd INIT_VIEW");
+    // SWSS_LOG_NOTICE("Notify syncd INIT_VIEW");
 
-    attr.id = SAI_REDIS_SWITCH_ATTR_NOTIFY_SYNCD;
-    attr.value.s32 = SAI_REDIS_NOTIFY_SYNCD_INIT_VIEW;
-    status = sai_switch_api->set_switch_attribute(gSwitchId, &attr);
+    // attr.id = SAI_REDIS_SWITCH_ATTR_NOTIFY_SYNCD;
+    // attr.value.s32 = SAI_REDIS_NOTIFY_SYNCD_INIT_VIEW;
+    // status = sai_switch_api->set_switch_attribute(gSwitchId, &attr);
 
-    if (status != SAI_STATUS_SUCCESS)
-    {
-        SWSS_LOG_ERROR("Failed to notify syncd INIT_VIEW %d", status);
-        exit(EXIT_FAILURE);
-    }
+    // if (status != SAI_STATUS_SUCCESS)
+    // {
+        // SWSS_LOG_ERROR("Failed to notify syncd INIT_VIEW %d", status);
+        // exit(EXIT_FAILURE);
+    // }
 
-    SWSS_LOG_NOTICE("Enable redis pipeline");
+    // SWSS_LOG_NOTICE("Enable redis pipeline");
 
-    attr.id = SAI_REDIS_SWITCH_ATTR_USE_PIPELINE;
-    attr.value.booldata = true;
+    // attr.id = SAI_REDIS_SWITCH_ATTR_USE_PIPELINE;
+    // attr.value.booldata = true;
 
-    sai_switch_api->set_switch_attribute(gSwitchId, &attr);
-    if (status != SAI_STATUS_SUCCESS)
-    {
-        SWSS_LOG_ERROR("Failed to enable redis pipeline %d", status);
-        exit(EXIT_FAILURE);
-    }
+    // sai_switch_api->set_switch_attribute(gSwitchId, &attr);
+    // if (status != SAI_STATUS_SUCCESS)
+    // {
+        // SWSS_LOG_ERROR("Failed to enable redis pipeline %d", status);
+        // exit(EXIT_FAILURE);
+    // }
 
     attr.id = SAI_SWITCH_ATTR_SRC_MAC_ADDRESS;
     if (!gMacAddress)
@@ -292,17 +291,17 @@ int main(int argc, char **argv)
 
     try
     {
-        SWSS_LOG_NOTICE("Notify syncd APPLY_VIEW");
+        // SWSS_LOG_NOTICE("Notify syncd APPLY_VIEW");
 
-        attr.id = SAI_REDIS_SWITCH_ATTR_NOTIFY_SYNCD;
-        attr.value.s32 = SAI_REDIS_NOTIFY_SYNCD_APPLY_VIEW;
-        status = sai_switch_api->set_switch_attribute(gSwitchId, &attr);
+        // attr.id = SAI_REDIS_SWITCH_ATTR_NOTIFY_SYNCD;
+        // attr.value.s32 = SAI_REDIS_NOTIFY_SYNCD_APPLY_VIEW;
+        // status = sai_switch_api->set_switch_attribute(gSwitchId, &attr);
 
-        if (status != SAI_STATUS_SUCCESS)
-        {
-            SWSS_LOG_ERROR("Failed to notify syncd APPLY_VIEW %d", status);
-            exit(EXIT_FAILURE);
-        }
+        // if (status != SAI_STATUS_SUCCESS)
+        // {
+            // SWSS_LOG_ERROR("Failed to notify syncd APPLY_VIEW %d", status);
+            // exit(EXIT_FAILURE);
+        // }
 
         orchDaemon->start();
     }

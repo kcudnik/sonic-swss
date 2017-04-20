@@ -3,7 +3,6 @@
 #include "logger.h"
 
 #define SAI_SWITCH_ATTR_CUSTOM_RANGE_BASE SAI_SWITCH_ATTR_CUSTOM_RANGE_START
-#include "sairedis.h"
 
 using namespace std;
 using namespace swss;
@@ -92,14 +91,14 @@ void OrchDaemon::flush()
 {
     SWSS_LOG_ENTER();
 
-    sai_attribute_t attr;
-    attr.id = SAI_REDIS_SWITCH_ATTR_FLUSH;
-    sai_status_t status = sai_switch_api->set_switch_attribute(gSwitchId, &attr);
-    if (status != SAI_STATUS_SUCCESS)
-    {
-        SWSS_LOG_ERROR("Failed to flush redis pipeline %d", status);
-        exit(EXIT_FAILURE);
-    }
+    // sai_attribute_t attr;
+    // attr.id = SAI_REDIS_SWITCH_ATTR_FLUSH;
+    // sai_status_t status = sai_switch_api->set_switch_attribute(gSwitchId, &attr);
+    // if (status != SAI_STATUS_SUCCESS)
+    // {
+        // SWSS_LOG_ERROR("Failed to flush redis pipeline %d", status);
+        // exit(EXIT_FAILURE);
+    // }
 }
 
 void OrchDaemon::start()
