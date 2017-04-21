@@ -154,6 +154,22 @@ map<string, Port>& PortsOrch::getAllPorts()
     return m_portList;
 }
 
+bool PortsOrch::getBridgePort(sai_object_id_t id, Port &port)
+{
+    // TODO: optimize by dictionary query
+    for (auto& pair: m_portList)
+    {
+        auto& port1 = pair.second;
+        if (port1.m_bridge_port_id == id)
+        {
+            port = port1;
+            return true;
+        }
+    }
+
+    return false;
+}
+
 bool PortsOrch::getPort(string alias, Port &p)
 {
     if (m_portList.find(alias) == m_portList.end())
@@ -885,7 +901,7 @@ bool PortsOrch::addVlanMember(Port vlan, Port port)
     vm_attrs[0].id = SAI_VLAN_MEMBER_ATTR_VLAN_ID;
     vm_attrs[0].value.u16 = vlan.m_vlan_id;
     vm_attrs[1].id = SAI_VLAN_MEMBER_ATTR_BRIDGE_PORT_ID;
-    vm_attrs[1].value.oid = port.m_port_id;
+    vm_attrs[1].value.oid = port.m_bridge_port_id;
     sai_object_id_t vlan_member_id;
     sai_status_t status = sai_vlan_api->create_vlan_member(&vlan_member_id, gSwitchId, 2, vm_attrs);
     if (status != SAI_STATUS_SUCCESS)
