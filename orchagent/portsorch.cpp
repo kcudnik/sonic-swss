@@ -897,13 +897,19 @@ bool PortsOrch::addVlanMember(Port vlan, Port port)
 {
     SWSS_LOG_ENTER();
 
-    sai_attribute_t vm_attrs[2];
-    vm_attrs[0].id = SAI_VLAN_MEMBER_ATTR_VLAN_ID;
-    vm_attrs[0].value.u16 = vlan.m_vlan_id;
-    vm_attrs[1].id = SAI_VLAN_MEMBER_ATTR_BRIDGE_PORT_ID;
-    vm_attrs[1].value.oid = port.m_bridge_port_id;
+    vector<sai_attribute_t> vm_attrs;
+    sai_attribute_t vm_attr;
+
+    vm_attr.id = SAI_VLAN_MEMBER_ATTR_VLAN_ID;
+    vm_attr.value.u16 = vlan.m_vlan_id;
+    vm_attrs.push_back(vm_attr);
+
+    vm_attr.id = SAI_VLAN_MEMBER_ATTR_BRIDGE_PORT_ID;
+    vm_attr.value.oid = port.m_bridge_port_id;
+    vm_attrs.push_back(vm_attr);
+
     sai_object_id_t vlan_member_id;
-    sai_status_t status = sai_vlan_api->create_vlan_member(&vlan_member_id, gSwitchId, 2, vm_attrs);
+    sai_status_t status = sai_vlan_api->create_vlan_member(&vlan_member_id, gSwitchId, vm_attrs.size(), vm_attrs.data());
     if (status != SAI_STATUS_SUCCESS)
     {
         SWSS_LOG_ERROR("Failed to add member %s to VLAN %s vid:%hu pid:%lx",
@@ -927,16 +933,26 @@ bool PortsOrch::addVlanMember(Port vlan, Port port)
 
     // Create bridge ports and add ports to bridge
     sai_object_id_t bport;
-    sai_attribute_t bport_attr[4];
-    bport_attr[0].id = SAI_BRIDGE_PORT_ATTR_TYPE;
-    bport_attr[0].value.s32 = SAI_BRIDGE_PORT_TYPE_PORT;
-    bport_attr[1].id = SAI_BRIDGE_PORT_ATTR_PORT_ID;
-    bport_attr[1].value.s32 = port.m_port_id;
-    bport_attr[2].id = SAI_BRIDGE_PORT_ATTR_BRIDGE_ID;
-    bport_attr[2].value.oid = m_default1QBridge;
-    bport_attr[3].id = SAI_BRIDGE_PORT_ATTR_FDB_LEARNING_MODE;
-    bport_attr[3].value.s32 = SAI_BRIDGE_PORT_FDB_LEARNING_MODE_HW;
-    status = sai_bridge_api->create_bridge_port(&bport, gSwitchId, 4, bport_attr);
+    vector<sai_attribute_t> bport_attrs;
+
+    sai_attribute_t bport_attr;
+    bport_attr.id = SAI_BRIDGE_PORT_ATTR_TYPE;
+    bport_attr.value.s32 = SAI_BRIDGE_PORT_TYPE_PORT;
+    bport_attrs.push_back(bport_attr);
+
+    bport_attr.id = SAI_BRIDGE_PORT_ATTR_PORT_ID;
+    bport_attr.value.s32 = port.m_port_id;
+    bport_attrs.push_back(bport_attr);
+
+    bport_attr.id = SAI_BRIDGE_PORT_ATTR_BRIDGE_ID;
+    bport_attr.value.oid = m_default1QBridge;
+    bport_attrs.push_back(bport_attr);
+
+    bport_attr.id = SAI_BRIDGE_PORT_ATTR_FDB_LEARNING_MODE;
+    bport_attr.value.s32 = SAI_BRIDGE_PORT_FDB_LEARNING_MODE_HW;
+    bport_attrs.push_back(bport_attr);
+
+    status = sai_bridge_api->create_bridge_port(&bport, gSwitchId, bport_attrs.size(), bport_attrs.data());
     if (status != SAI_STATUS_SUCCESS)
     {
         SWSS_LOG_ERROR("Failed to create default 1Q bridge port for pid:%lx: %d",
