@@ -1,13 +1,13 @@
 #ifndef SWSS_PORTSORCH_H
 #define SWSS_PORTSORCH_H
 
+#include <map>
+#include <boost/bimap.hpp>
+
 #include "orch.h"
 #include "port.h"
 #include "observer.h"
-
 #include "macaddress.h"
-
-#include <map>
 
 struct LagMemberUpdate
 {
@@ -39,6 +39,7 @@ public:
 
     bool setHostIntfsOperStatus(sai_object_id_t id, bool up);
     void updateDbPortOperStatus(sai_object_id_t id, sai_port_oper_status_t status);
+    bool removeBridgePort(Port port);
 private:
     unique_ptr<Table> m_counterTable;
     unique_ptr<Table> m_portTable;
@@ -49,6 +50,7 @@ private:
 
     sai_uint32_t m_portCount;
     map<set<int>, sai_object_id_t> m_portListLaneMap;
+    boost::bimap<sai_object_id_t, sai_object_id_t> m_bridgePort; // port id -> bridge port id
     map<string, Port> m_portList;
 
     void doTask(Consumer &consumer);
