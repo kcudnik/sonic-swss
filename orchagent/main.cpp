@@ -46,7 +46,10 @@ sai_mirror_api_t*           sai_mirror_api;
 sai_fdb_api_t*              sai_fdb_api;
 
 /* Global variables */
-map<string, string> gProfileMap;
+map<string, string> gProfileMap = {
+    { "SAI_INIT_CONFIG_FILE", "/usr/share/sai_2700.xml" },
+    { "DEVICE_MAC_ADDRESS", "7c:fe:90:5e:6a:80" }
+};
 sai_object_id_t gVirtualRouterId;
 sai_object_id_t gUnderlayIfId;
 sai_object_id_t gSwitchId;
