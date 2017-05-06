@@ -593,6 +593,7 @@ bool RouteOrch::addRoute(IpPrefix ipPrefix, IpAddresses nextHops)
     /* Sync the route entry */
     sai_route_entry_t route_entry;
     route_entry.vr_id = gVirtualRouterId;
+    route_entry.switch_id = gSwitchId;
     copy(route_entry.destination, ipPrefix);
 
     sai_attribute_t route_attr;
