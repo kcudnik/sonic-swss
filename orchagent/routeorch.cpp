@@ -678,6 +678,7 @@ bool RouteOrch::removeRoute(IpPrefix ipPrefix)
 
     sai_route_entry_t route_entry;
     route_entry.vr_id = gVirtualRouterId;
+    route_entry.switch_id = gSwitchId;
     copy(route_entry.destination, ipPrefix);
 
     // set to blackhole for default route
