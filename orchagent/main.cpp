@@ -272,17 +272,13 @@ int main(int argc, char **argv)
     }
     else
     {
-        /*
-         * NOTE: Set mac address is disabled since mlnx don't support that yet.
-         */
-
-        //memcpy(attr.value.mac, gMacAddress.getMac(), 6);
-        //status = sai_switch_api->set_switch_attribute(gSwitchId, &attr);
-        //if (status != SAI_STATUS_SUCCESS)
-        //{
-        //    SWSS_LOG_ERROR("Failed to set MAC address to switch %d", status);
-        //    exit(EXIT_FAILURE);
-        //}
+        memcpy(attr.value.mac, gMacAddress.getMac(), 6);
+        status = sai_switch_api->set_switch_attribute(gSwitchId, &attr);
+        if (status != SAI_STATUS_SUCCESS)
+        {
+            SWSS_LOG_ERROR("Failed to set MAC address to switch %d", status);
+            exit(EXIT_FAILURE);
+        }
     }
 
     /* Get the default virtual router ID */
