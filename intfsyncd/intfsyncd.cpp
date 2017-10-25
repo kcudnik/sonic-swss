@@ -5,17 +5,70 @@
 #include "netlink.h"
 #include "intfsyncd/intfsync.h"
 
+#include <netlink/route/link.h>
+#include <netlink/route/addr.h>
+#include "linkcache.h"
+
 using namespace std;
 using namespace swss;
+
+class IfSync : public NetMsg
+{
+public:
+    enum { MAX_ADDR_SIZE = 64 };
+
+    virtual void onMsg(int nlmsg_type, struct nl_object *obj)
+    {
+        printf("on message\n");
+        char addrStr[MAX_ADDR_SIZE + 1] = {0};
+        struct rtnl_addr *addr = (struct rtnl_addr *)obj;
+        string key;
+        string scope = "global";
+        string family;
+
+        if ((nlmsg_type != RTM_NEWADDR) && (nlmsg_type != RTM_GETADDR) &&
+            (nlmsg_type != RTM_DELADDR))
+            return;
+
+        /* Don't sync local routes */
+        if (rtnl_addr_get_scope(addr) != RT_SCOPE_UNIVERSE)
+        {
+            scope = "local";
+            return;
+        }
+
+        if (rtnl_addr_get_family(addr) == AF_INET)
+            family = IPV4_NAME;
+        else if (rtnl_addr_get_family(addr) == AF_INET6)
+            family = IPV6_NAME;
+        else
+            // Not supported
+            return;
+
+        key = LinkCache::getInstance().ifindexToName(rtnl_addr_get_ifindex(addr));
+        key+= ":";
+        nl_addr2str(rtnl_addr_get_local(addr), addrStr, MAX_ADDR_SIZE);
+        key+= addrStr;
+        if (nlmsg_type == RTM_DELADDR)
+        {
+            printf("del %s\n", key.c_str());
+            return;
+        }
+
+        printf("set %s %s %s\n", key.c_str(), family.c_str(), scope.c_str());
+
+    }
+};
 
 int main(int argc, char **argv)
 {
     swss::Logger::linkToDbNative("intfsyncd");
-    DBConnector db(APPL_DB, DBConnector::DEFAULT_UNIXSOCKET, 0);
-    IntfSync sync(&db);
+   // DBConnector db(APPL_DB, DBConnector::DEFAULT_UNIXSOCKET, 0);
+    ///IntfSync sync(&db);
+    IfSync sync;
 
-    NetDispatcher::getInstance().registerMessageHandler(RTM_NEWADDR, &sync);
-    NetDispatcher::getInstance().registerMessageHandler(RTM_DELADDR, &sync);
+ //   NetDispatcher::getInstance().registerMessageHandler(RTM_NEWADDR, &sync);
+  //  NetDispatcher::getInstance().registerMessageHandler(RTM_DELADDR, &sync);
 
     while (1)
     {
@@ -24,17 +77,36 @@ int main(int argc, char **argv)
             NetLink netlink;
             Select s;
 
-            netlink.registerGroup(RTNLGRP_IPV4_IFADDR);
-            netlink.registerGroup(RTNLGRP_IPV6_IFADDR);
+         //   netlink.registerGroup(RTNLGRP_IPV4_IFADDR);
+          //  netlink.registerGroup(RTNLGRP_IPV6_IFADDR);
+            netlink.registerGroup(RTNLGRP_LINK);
             cout << "Listens to interface messages..." << endl;
-            netlink.dumpRequest(RTM_GETADDR);
+         //  netlink.dumpRequest(RTM_GETLINK);
+          //  netlink.dumpRequest(RTM_GETADDR);
 
             s.addSelectable(&netlink);
+
             while (true)
             {
-                Selectable *temps;
+                printf("select\n");
+
+                Selectable *temps = NULL;
+
                 int tempfd;
-                s.select(&temps, &tempfd);
+                int result = s.select(&temps, &tempfd);
+
+                if (result == swss::Select::OBJECT)
+                {
+                    printf("object\n");
+
+                   // netlink.dumpRequest(RTM_GETLINK);
+                }
+                else
+                {
+
+                    printf("non object %d\n", result);
+                }
+
             }
         }
         catch (const std::exception& e)
