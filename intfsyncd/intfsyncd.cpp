@@ -9,6 +9,8 @@
 #include <netlink/route/addr.h>
 #include "linkcache.h"
 
+//  while :; do for a in up down; do ip netns exec sw0srv0 ip link set $a dev sw0srv0eth0; echo $a; sleep 3; done; done
+//
 using namespace std;
 using namespace swss;
 
@@ -25,6 +27,31 @@ public:
         string key;
         string scope = "global";
         string family;
+
+        if (nlmsg_type == RTM_NEWLINK)
+        {
+            printf("new link\n");
+
+            struct rtnl_link *link = (struct rtnl_link *)obj;
+
+            int idx = rtnl_link_get_ifindex(link);
+
+            printf("ifx %d\n", idx);
+
+            unsigned int flags = rtnl_link_get_flags(link); // IFF_LOWER_UP and IFF_RUNNING
+
+            printf("flags 0x%x\n", flags);
+
+            const char * name = rtnl_link_get_name(link);
+
+            printf("name %s\n", name);
+
+        }
+        
+        if (nlmsg_type == RTM_DELLINK)
+        {
+            printf("del link\n");
+        }
 
         if ((nlmsg_type != RTM_NEWADDR) && (nlmsg_type != RTM_GETADDR) &&
             (nlmsg_type != RTM_DELADDR))
@@ -67,8 +94,11 @@ int main(int argc, char **argv)
     ///IntfSync sync(&db);
     IfSync sync;
 
- //   NetDispatcher::getInstance().registerMessageHandler(RTM_NEWADDR, &sync);
+    //NetDispatcher::getInstance().registerMessageHandler(RTM_NEWADDR, &sync);
   //  NetDispatcher::getInstance().registerMessageHandler(RTM_DELADDR, &sync);
+    NetDispatcher::getInstance().registerMessageHandler(RTM_NEWLINK, &sync);
+    NetDispatcher::getInstance().registerMessageHandler(RTM_DELLINK, &sync);
+   // NetDispatcher::getInstance().registerMessageHandler(RTM_GETLINK, &sync);
 
     while (1)
     {
@@ -81,7 +111,7 @@ int main(int argc, char **argv)
           //  netlink.registerGroup(RTNLGRP_IPV6_IFADDR);
             netlink.registerGroup(RTNLGRP_LINK);
             cout << "Listens to interface messages..." << endl;
-         //  netlink.dumpRequest(RTM_GETLINK);
+           netlink.dumpRequest(RTM_GETLINK);
           //  netlink.dumpRequest(RTM_GETADDR);
 
             s.addSelectable(&netlink);
