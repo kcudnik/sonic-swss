@@ -4,6 +4,7 @@
 #include "netdispatcher.h"
 #include "netlink.h"
 #include "intfsyncd/intfsync.h"
+#include "selectableevent.h"
 
 #include <netlink/route/link.h>
 #include <netlink/route/addr.h>
@@ -100,6 +101,9 @@ int main(int argc, char **argv)
     NetDispatcher::getInstance().registerMessageHandler(RTM_DELLINK, &sync);
    // NetDispatcher::getInstance().registerMessageHandler(RTM_GETLINK, &sync);
 
+     swss::SelectableEvent ntf_event;
+
+
     while (1)
     {
         try
@@ -115,6 +119,7 @@ int main(int argc, char **argv)
           //  netlink.dumpRequest(RTM_GETADDR);
 
             s.addSelectable(&netlink);
+            s.addSelectable(&ntf_event);
 
             while (true)
             {
