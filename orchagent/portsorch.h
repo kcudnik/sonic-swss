@@ -149,6 +149,8 @@ public:
 
     bool getRecircPort(Port &p, string role);
 
+    void processNotifications();
+
 private:
     unique_ptr<Table> m_counterTable;
     unique_ptr<Table> m_counterLagTable;

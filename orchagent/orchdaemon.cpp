@@ -568,6 +568,8 @@ void OrchDaemon::start()
             continue;
         }
 
+        gPortsOrch->processNotifications();
+
         auto *c = (Executor *)s;
         c->execute();
 
@@ -576,7 +578,10 @@ void OrchDaemon::start()
 
         /* TODO: Abstract Orch class to have a specific todo list */
         for (Orch *o : m_orchList)
+        {
+            gPortsOrch->processNotifications();
             o->doTask();
+        }
 
         /*
          * Asked to check warm restart readiness.

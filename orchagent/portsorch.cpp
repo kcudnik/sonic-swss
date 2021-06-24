@@ -5072,6 +5072,18 @@ void PortsOrch::generatePriorityGroupMapPerPort(const Port& port)
     CounterCheckOrch::getInstance().addPort(port);
 }
 
+void PortsOrch::processNotifications()
+{
+    SWSS_LOG_ENTER();
+
+    if (m_portStatusNotificationConsumer->peek())
+    {
+        SWSS_LOG_NOTICE("XXX peek success");
+
+        doTask(*m_portStatusNotificationConsumer);
+    }
+}
+
 void PortsOrch::doTask(NotificationConsumer &consumer)
 {
     SWSS_LOG_ENTER();
@@ -5079,12 +5091,19 @@ void PortsOrch::doTask(NotificationConsumer &consumer)
     /* Wait for all ports to be initialized */
     if (!allPortsReady())
     {
+        SWSS_LOG_NOTICE("XXX not all ports ready");
         return;
     }
 
     std::string op;
     std::string data;
     std::vector<swss::FieldValueTuple> values;
+
+    if (consumer.hasData() == false)
+    {
+        SWSS_LOG_WARN("XXX no data");
+        return;
+    }
 
     consumer.pop(op, data, values);
 
@@ -5095,6 +5114,8 @@ void PortsOrch::doTask(NotificationConsumer &consumer)
 
     if (op == "port_state_change")
     {
+        SWSS_LOG_NOTICE("XXX processing notification");
+
         uint32_t count;
         sai_port_oper_status_notification_t *portoperstatus = nullptr;
 
