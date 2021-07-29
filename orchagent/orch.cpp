@@ -667,6 +667,8 @@ void Orch::addExecutor(Executor* executor)
             std::forward_as_tuple(executor->getName()),
             std::forward_as_tuple(executor));
 
+    SWSS_LOG_NOTICE("XXX addExecutor table %s ptr %p", executor->getTableName().c_str(), executor);
+
     // If there is duplication of executorName in m_consumerMap, logic error
     if (!inserted.second)
     {
