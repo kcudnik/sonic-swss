@@ -550,6 +550,8 @@ void OrchDaemon::start()
             continue;
         }
 
+        gPortsOrch->doTask(); // priorityze ports and lags
+
         auto *c = (Executor *)s;
         c->execute();
 
@@ -558,7 +560,11 @@ void OrchDaemon::start()
 
         /* TODO: Abstract Orch class to have a specific todo list */
         for (Orch *o : m_orchList)
+        {
+            gPortsOrch->doTask(); // priorityze ports and lags
+
             o->doTask();
+        }
 
         /*
          * Asked to check warm restart readiness.
