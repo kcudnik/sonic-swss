@@ -996,6 +996,14 @@ bool PortHelper::parsePortConfig(PortConfig &port) const
                 return false;
             }
         }
+        else if (field == PORT_SUBPORT)
+        {
+            // TODO add support for "subport", currently this is not logged
+            // because is causing CRM test to fail, unparsed "subport"
+            // generates 20k messages in syslog and it's causing docker syslog
+            // message rate limmiting, which drops messages, and test
+            // conditions based on syslog string are failing
+        }
         else
         {
             SWSS_LOG_WARN("Unknown field(%s): skipping ...", field.c_str());
